@@ -16,23 +16,39 @@ public class ArcherView : MonoBehaviour
 
     public GameObject arrowPrefab;
 
-    private UnityAction newTargetListener;
+    private UnityAction
+        NewTargetListener,
+
+        GamePauseListener,
+        GamePlayListener,
+        GameOverListener;
 
     private bool shooting;
 
     private void Awake()
     {
-        newTargetListener = new UnityAction(NewTarget);
+        GamePauseListener = GameOverListener = new UnityAction(Pause);
+        GamePlayListener = new UnityAction(Play);
+
+        NewTargetListener = new UnityAction(NewTarget);
     }
 
     private void OnEnable()
     {
-        EventManager.StartListening("NewTarget", newTargetListener);
+        EventManager.StartListening("GamePause", GamePauseListener);
+        EventManager.StartListening("GamePlay", GamePlayListener);
+        EventManager.StartListening("GameOver", GameOverListener);
+
+        EventManager.StartListening("NewTarget", NewTargetListener);
     }
 
     private void OnDisable()
     {
-        EventManager.StopListening("NewTarget", newTargetListener);
+        EventManager.StopListening("GamePause", GamePauseListener);
+        EventManager.StopListening("GamePlay", GamePlayListener);
+        EventManager.StopListening("GameOver", GameOverListener);
+
+        EventManager.StopListening("NewTarget", NewTargetListener);
     }
 
     void Start ()
@@ -48,9 +64,10 @@ public class ArcherView : MonoBehaviour
     private IEnumerator Shoot()
     {
 
-        GetComponent<Animator>().SetBool("Shoot", true);
+        //float animTime = GetComponent<Animator>().GetCurrentAnimatorStateInfo(0).length;
         shooting = true;
 
+        GetComponent<Animator>().SetBool("Shoot", true);
         GameObject target = attackList.First();
 
         while ( target != null )
@@ -60,14 +77,25 @@ public class ArcherView : MonoBehaviour
 
             while (target.GetComponent<EnemyView>().alive)
             {
-                GameObject arrow = Instantiate(arrowPrefab, transform);
-                arrow.transform.GetComponent<SpriteRenderer>().sortingOrder = target.transform.GetComponent<SpriteRenderer>().sortingOrder;
-                StartCoroutine(ArrowFly(arrow, target.transform));
+                float animTime = GetComponent<Animator>().GetFloat("MyLength");
+                if (float.IsInfinity(animTime))
+                    animTime = GetComponent<Animator>().GetNextAnimatorStateInfo(0).length;
+                Debug.Log("And here we get animation lenth, and it is " + GetComponent<Animator>().GetCurrentAnimatorStateInfo(0).length);
+                yield return new WaitForSeconds(GetComponent<Animator>().GetCurrentAnimatorStateInfo(0).length);
 
-                yield return new WaitForSeconds(1f * GameModel.archer[modelNumber].speed);
-                EventManager.TriggerEvent("ArrowHit", GameModel.archer[modelNumber].damage);
+                if (!GameModel.play)
+                {
+                    yield return new WaitUntil(() => GameModel.play);
+                    Debug.Log("here we go back");
+                }
 
                 if (target == null) break;
+
+                GameObject arrow = Instantiate(arrowPrefab, transform.position + Vector3.right * 2f, Quaternion.identity);
+                arrow.transform.GetComponent<SpriteRenderer>().sortingOrder = target.transform.GetComponent<SpriteRenderer>().sortingOrder;
+
+                StartCoroutine(ArrowFly(arrow, target.transform));
+
             }
 
             attackList.Remove(target);
@@ -81,23 +109,28 @@ public class ArcherView : MonoBehaviour
 
     private IEnumerator ArrowFly(GameObject arrow, Transform target)
     {
+
         float offset = 0f;
-        Vector3 heading = target.position - arrow.transform.position;
 
-        arrow.GetComponent<Rigidbody2D>().velocity = heading / heading.magnitude * 100f;
-
-        while (Vector3.Distance(arrow.transform.position, target.position) > 0.5)
+        while (Vector3.Distance(arrow.transform.position, target.position) > 3f)
         {
-            //arrow.transform.position = new Vector3(Mathf.Lerp(arrow.transform.position.x, target.position.x, offset), Mathf.Lerp(arrow.transform.position.y, target.position.y, offset));
-            //arrow.transform.Rotate(Vector3.up);
+            if (GameModel.play)
+            {
+                arrow.transform.position = new Vector3(Mathf.Lerp(arrow.transform.position.x, target.position.x, offset), Mathf.Lerp(arrow.transform.position.y, target.position.y, offset));
+                arrow.transform.Rotate(0, 0, (target.position.y - arrow.transform.position.y) * 0.5f);
 
-            yield return new WaitForSeconds(0.01f);
+                yield return new WaitForSeconds(0.01f);
 
-            offset += .02f;
+                offset += .02f;
+            }
+            else yield return new WaitUntil(() => GameModel.play);
+
             if (target == null) break;
         }
 
+        EventManager.TriggerEvent("ArrowHit", GameModel.archer[modelNumber].damage);
         Destroy(arrow);
+
     }
 
     private void NewTarget()
@@ -112,6 +145,18 @@ public class ArcherView : MonoBehaviour
         }
 
         if ( !shooting && attackList.Count > 0) StartCoroutine(Shoot());
+
+    }
+
+    private void Pause()
+    {
+        transform.GetComponent<Animator>().speed = 0f;
+    }
+
+    private void Play()
+    {
+
+        transform.GetComponent<Animator>().speed = 1f;
 
     }
 

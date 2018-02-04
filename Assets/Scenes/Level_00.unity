@@ -1038,7 +1038,7 @@ Animator:
   m_Controller: {fileID: 9100000, guid: 57cdadaba9771d04bb2de130f27e0634, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
-  m_ApplyRootMotion: 0
+  m_ApplyRootMotion: 1
   m_LinearVelocityBlending: 0
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
@@ -8091,7 +8091,7 @@ Animator:
   m_Controller: {fileID: 9100000, guid: 78bf71f1efb000342b244926848ea7aa, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
-  m_ApplyRootMotion: 0
+  m_ApplyRootMotion: 1
   m_LinearVelocityBlending: 0
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
@@ -8131,7 +8131,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 22
   m_Sprite: {fileID: 21300000, guid: 590e446d4c56808428ce12b0b3550282, type: 3}
-  m_Color: {r: 0, g: 0, b: 0, a: 0.3019608}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 1
   m_FlipY: 0
   m_DrawMode: 0
