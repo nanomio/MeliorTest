@@ -8,7 +8,7 @@ using UnityEngine.Events;
 public class ArcherView : MonoBehaviour
 {
 
-    static public float attackLine = 2.0f;
+    static public float attackLine = 3.3f;
 
     static public List<GameObject> attackList = new List<GameObject>();
 
@@ -18,12 +18,14 @@ public class ArcherView : MonoBehaviour
 
     private UnityAction
         NewTargetListener,
+        TargetDeathListener,
 
         GamePauseListener,
         GamePlayListener,
         GameOverListener;
 
     private bool shooting;
+    private GameObject target;
 
     private void Awake()
     {
@@ -31,6 +33,7 @@ public class ArcherView : MonoBehaviour
         GamePlayListener = new UnityAction(Play);
 
         NewTargetListener = new UnityAction(NewTarget);
+        TargetDeathListener = new UnityAction(TargetDeath);
     }
 
     private void OnEnable()
@@ -40,6 +43,7 @@ public class ArcherView : MonoBehaviour
         EventManager.StartListening("GameOver", GameOverListener);
 
         EventManager.StartListening("NewTarget", NewTargetListener);
+        EventManager.StartListening("TargetDeath", TargetDeathListener);
     }
 
     private void OnDisable()
@@ -49,6 +53,7 @@ public class ArcherView : MonoBehaviour
         EventManager.StopListening("GameOver", GameOverListener);
 
         EventManager.StopListening("NewTarget", NewTargetListener);
+        EventManager.StopListening("TargetDeath", TargetDeathListener);
     }
 
     void Start ()
@@ -64,24 +69,26 @@ public class ArcherView : MonoBehaviour
     private IEnumerator Shoot()
     {
 
-        //float animTime = GetComponent<Animator>().GetCurrentAnimatorStateInfo(0).length;
         shooting = true;
-
-        GetComponent<Animator>().SetBool("Shoot", true);
-        GameObject target = attackList.First();
+        target = attackList.First();
 
         while ( target != null )
         {
 
+            GetComponent<Animator>().SetBool("Shoot", true);
             target.gameObject.tag = "Target";
 
             while (target.GetComponent<EnemyView>().alive)
             {
-                float animTime = GetComponent<Animator>().GetFloat("MyLength");
+                float animTime = GetComponent<Animator>().GetCurrentAnimatorStateInfo(0).length;
+
                 if (float.IsInfinity(animTime))
-                    animTime = GetComponent<Animator>().GetNextAnimatorStateInfo(0).length;
-                Debug.Log("And here we get animation lenth, and it is " + GetComponent<Animator>().GetCurrentAnimatorStateInfo(0).length);
-                yield return new WaitForSeconds(GetComponent<Animator>().GetCurrentAnimatorStateInfo(0).length);
+                {
+                    yield return new WaitForEndOfFrame();
+                    animTime = GetComponent<Animator>().GetCurrentAnimatorStateInfo(0).length;
+                }
+
+                yield return new WaitForSeconds(animTime);
 
                 if (!GameModel.play)
                 {
@@ -98,7 +105,6 @@ public class ArcherView : MonoBehaviour
 
             }
 
-            attackList.Remove(target);
             target = attackList.Count > 0 ? attackList.First() : null;
 
         }
@@ -148,9 +154,21 @@ public class ArcherView : MonoBehaviour
 
     }
 
+    private void TargetDeath()
+    {
+
+        GetComponent<Animator>().SetBool("Shoot", false);
+        
+        attackList.Remove(target);
+        target = null;
+
+    }
+
     private void Pause()
     {
+
         transform.GetComponent<Animator>().speed = 0f;
+
     }
 
     private void Play()

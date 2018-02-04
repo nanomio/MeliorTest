@@ -83,6 +83,7 @@ public class EnemyView : MonoBehaviour
     {
         alive = false;
         transform.GetComponent<Animator>().SetBool("Die", true);
+        EventManager.TriggerEvent("TargetDeath");
 
         yield return new WaitForSeconds(transform.GetComponent<Animator>().GetCurrentAnimatorStateInfo(0).length - .1f);
 
@@ -166,17 +167,24 @@ public class EnemyView : MonoBehaviour
 
     private void Pause()
     {
-        transform.GetComponent<Animator>().speed = 0f;
+
+        GetComponent<Animator>().speed = 0f;
+        transform.GetChild(0).GetComponent<Animator>().speed = 0f;
+
         if (shell != null)
         {
             shell.transform.GetComponent<Rigidbody2D>().Sleep();
             shell.transform.GetComponent<Animator>().speed = 0f;
         }
+
     }
 
     private void Play()
     {
-        transform.GetComponent<Animator>().speed = 1f;
+
+        GetComponent<Animator>().speed = 1f;
+        transform.GetChild(0).GetComponent<Animator>().speed = 1f;
+
         if (shell != null)
         {
             shell.transform.GetComponent<Rigidbody2D>().WakeUp();
