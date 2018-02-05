@@ -8,9 +8,11 @@ using UnityEngine.Events;
 public class ArcherView : MonoBehaviour
 {
 
+    private const float boostTime = 2.2f;
+
     static public float attackLine = 3.3f;
 
-    static public List<GameObject> attackList = new List<GameObject>();
+    static public List<GameObject> attackList;
 
     public int modelNumber;
 
@@ -22,49 +24,77 @@ public class ArcherView : MonoBehaviour
 
         GamePauseListener,
         GamePlayListener,
-        GameOverListener;
+        GameOverListener,
+        
+        SpeedBoostListener;
 
-    private bool shooting;
     private GameObject target;
+
+    private bool
+        active,
+        shooting,
+        boosted;
 
     private void Awake()
     {
-        GamePauseListener = GameOverListener = new UnityAction(Pause);
-        GamePlayListener = new UnityAction(Play);
-
         NewTargetListener = new UnityAction(NewTarget);
         TargetDeathListener = new UnityAction(TargetDeath);
+
+        GamePauseListener = new UnityAction(Pause);
+        GamePlayListener = new UnityAction(Play);
+        GameOverListener = new UnityAction(GameOver);
+
+        SpeedBoostListener = new UnityAction(SpeedBoost);
     }
 
     private void OnEnable()
     {
+        EventManager.StartListening("NewTarget", NewTargetListener);
+        EventManager.StartListening("TargetDeath", TargetDeathListener);
+
         EventManager.StartListening("GamePause", GamePauseListener);
         EventManager.StartListening("GamePlay", GamePlayListener);
         EventManager.StartListening("GameOver", GameOverListener);
 
-        EventManager.StartListening("NewTarget", NewTargetListener);
-        EventManager.StartListening("TargetDeath", TargetDeathListener);
+        EventManager.StartListening("SpeedBoost", SpeedBoostListener);
     }
 
     private void OnDisable()
     {
+        EventManager.StopListening("NewTarget", NewTargetListener);
+        EventManager.StopListening("TargetDeath", TargetDeathListener);
+
         EventManager.StopListening("GamePause", GamePauseListener);
         EventManager.StopListening("GamePlay", GamePlayListener);
         EventManager.StopListening("GameOver", GameOverListener);
 
-        EventManager.StopListening("NewTarget", NewTargetListener);
-        EventManager.StopListening("TargetDeath", TargetDeathListener);
+        EventManager.StopListening("SpeedBoost", SpeedBoostListener);
     }
 
     void Start ()
     {
-        shooting = false;
+        active = shooting = boosted = false;
+
+        target = null;
+        attackList = new List<GameObject>();
 	}
 	
 	void Update ()
     {
 		
 	}
+
+    public void Activate()
+    {
+
+        active = true;
+
+        if (attackList.Count > 0)
+        {
+            StartCoroutine(Shoot());
+        }
+
+    }
 
     private IEnumerator Shoot()
     {
@@ -80,6 +110,25 @@ public class ArcherView : MonoBehaviour
 
             while (target.GetComponent<EnemyView>().alive)
             {
+
+                if (boosted && GetComponent<Animator>().speed < 2f)
+                {
+                    GetComponent<Animator>().speed = 2f;
+
+                    Debug.Log("Speed up!");
+
+                    yield return new WaitForEndOfFrame();
+                }
+
+                if (!boosted && GetComponent<Animator>().speed > 1f)
+                {
+                    GetComponent<Animator>().speed = 1f;
+
+                    Debug.Log("Boost ended!");
+
+                    yield return new WaitForEndOfFrame();
+                }
+
                 float animTime = GetComponent<Animator>().GetCurrentAnimatorStateInfo(0).length;
 
                 if (float.IsInfinity(animTime))
@@ -90,13 +139,9 @@ public class ArcherView : MonoBehaviour
 
                 yield return new WaitForSeconds(animTime);
 
-                if (!GameModel.play)
-                {
-                    yield return new WaitUntil(() => GameModel.play);
-                    Debug.Log("here we go back");
-                }
+                if (!GameModel.play) yield return new WaitUntil(() => GameModel.play);
 
-                if (target == null) break;
+                if (target == null || !GetComponent<Animator>().GetBool("Shoot")) break;
 
                 GameObject arrow = Instantiate(arrowPrefab, transform.position + Vector3.right * 2f, Quaternion.identity);
                 arrow.transform.GetComponent<SpriteRenderer>().sortingOrder = target.transform.GetComponent<SpriteRenderer>().sortingOrder;
@@ -105,12 +150,14 @@ public class ArcherView : MonoBehaviour
 
             }
 
+            attackList.Remove(target);
             target = attackList.Count > 0 ? attackList.First() : null;
 
         }
 
         GetComponent<Animator>().SetBool("Shoot", false);
         shooting = false;
+
     }
 
     private IEnumerator ArrowFly(GameObject arrow, Transform target)
@@ -134,9 +181,21 @@ public class ArcherView : MonoBehaviour
             if (target == null) break;
         }
 
-        EventManager.TriggerEvent("ArrowHit", GameModel.archer[modelNumber].damage);
+        EventManager.TriggerEvent("ArrowHit", modelNumber);
         Destroy(arrow);
 
+    }
+
+    private IEnumerator BoostTimer()
+    {
+
+        yield return new WaitForSeconds(boostTime);
+        boosted = false;
+
+        if (target == null || !shooting)
+        {
+            GetComponent<Animator>().speed = 1f;
+        }
     }
 
     private void NewTarget()
@@ -150,7 +209,7 @@ public class ArcherView : MonoBehaviour
             newTarget.tag = "Enemy";
         }
 
-        if ( !shooting && attackList.Count > 0) StartCoroutine(Shoot());
+        if ( !shooting && active) StartCoroutine(Shoot());
 
     }
 
@@ -159,8 +218,13 @@ public class ArcherView : MonoBehaviour
 
         GetComponent<Animator>().SetBool("Shoot", false);
         
-        attackList.Remove(target);
-        target = null;
+    }
+
+    private void SpeedBoost()
+    {
+
+        boosted = true;
+        StartCoroutine(BoostTimer());
 
     }
 
@@ -174,7 +238,14 @@ public class ArcherView : MonoBehaviour
     private void Play()
     {
 
-        transform.GetComponent<Animator>().speed = 1f;
+        transform.GetComponent<Animator>().speed = boosted ? 2f : 1f;
+
+    }
+
+    private void GameOver()
+    {
+
+        transform.gameObject.SetActive(false);
 
     }
 

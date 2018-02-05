@@ -16,20 +16,29 @@ public class Archer
 public class GameModel
 {
 
-    public static bool play;
+    public const float
+        waveWaitTime = 10f,
+        dT = .1f;
+
+    public static bool
+        play,
+        waiting;
 
     public static int
         hp,
         gold,
         points,
 
-        archersCount,
+        countArchers,
+        waveHP,
+        waveProgress,
 
-        iceblasts,
-        fireballs,
-        lightnings;
+        countBoosts,
+        countRepairs,
+        countFireballs;
 
-    public static float speed = 1.0f;
+    public static float
+        speed = 1.0f;
 
     public static Archer[] archer;
 

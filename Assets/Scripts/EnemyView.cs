@@ -65,11 +65,11 @@ public class EnemyView : MonoBehaviour
 
     }
 
-    private void TakeHit(int damage)
+    private void TakeHit(int archerModelNum)
     {
         if( tag == "Target" )
         {
-            hp -= damage;
+            hp -= GameModel.archer[archerModelNum].damage;
 
             if (!transform.GetChild(0).gameObject.activeSelf)
                 transform.GetChild(0).gameObject.SetActive(true);
@@ -82,10 +82,12 @@ public class EnemyView : MonoBehaviour
     private IEnumerator Die()
     {
         alive = false;
-        transform.GetComponent<Animator>().SetBool("Die", true);
+        GetComponent<Animator>().SetBool("Die", true);
         EventManager.TriggerEvent("TargetDeath");
 
         yield return new WaitForSeconds(transform.GetComponent<Animator>().GetCurrentAnimatorStateInfo(0).length - .1f);
+        if (GameObject.FindGameObjectsWithTag("Enemy").Length == 0)
+            EventManager.TriggerEvent("GameWin");
 
         Destroy(gameObject);
     }

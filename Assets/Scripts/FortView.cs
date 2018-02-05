@@ -38,9 +38,9 @@ public class FortView : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
-        if (GameModel.hp > 0)
+        if (GameModel.hp - damage > 0)
         {
-            GameModel.hp -= damage;
+            GameModel.hp = GameModel.hp - damage < maxHP ? GameModel.hp - damage : maxHP - 2;
 
             barHP.value = (float)GameModel.hp / maxHP;
             if (fortState != lastState - GameModel.hp / (maxHP * 1 / (lastState + 1)))

@@ -19,7 +19,7 @@ public class AddArcherPopupView : MonoBehaviour
     public void BtnClose()
     {
 
-        GameObject addArcher = defence.transform.GetChild(GameModel.archersCount).gameObject;
+        GameObject addArcher = defence.transform.GetChild(GameModel.countArchers).gameObject;
         addArcher.SetActive(false);
 
         ClosePopup();
@@ -30,15 +30,16 @@ public class AddArcherPopupView : MonoBehaviour
     {
         if (GameModel.gold >= GameModel.archer[num].price)
         {
-            GameObject addArcher = defence.transform.GetChild(GameModel.archersCount).gameObject;
+            GameObject addArcher = defence.transform.GetChild(GameModel.countArchers).gameObject;
 
             addArcher.GetComponent<SpriteRenderer>().color = new Color(255f, 255f, 255f, 255f);
             addArcher.GetComponent<Animator>().runtimeAnimatorController = ArcherAnim[num];
 
             addArcher.GetComponent<ArcherView>().modelNumber = num;
+            addArcher.GetComponent<ArcherView>().Activate();
 
             GameModel.gold -= GameModel.archer[num].price;
-            GameModel.archersCount++;
+            GameModel.countArchers++;
 
             ClosePopup();
         }

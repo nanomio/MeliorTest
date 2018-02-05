@@ -7,15 +7,15 @@ public class ShopPopupView : MonoBehaviour
 {
 
     private const sbyte
-        CostIceblast = 25,
-        CostFireball = 25,
-        CostLightning = 35;
+        CostBoost = 50,
+        CostRepair = 50,
+        CostFireball = 65;
 
-    public TextMeshProUGUI 
+    public TextMeshProUGUI
         countGold,
-        countIceblasts,
-        countFireballs,
-        countLightnngs;
+        countBoosts,
+        countRepairs,
+        countFireballs;
 
     public Animator animatorPanelBottom;
 
@@ -31,15 +31,27 @@ public class ShopPopupView : MonoBehaviour
         ClosePopup();
     }
 
-    public void BtnAddIceblast()
+    public void BtnAddBoost()
     {
-        if (GameModel.gold >= CostIceblast)
+        if (GameModel.gold >= CostBoost)
         {
-            GameModel.gold -= CostIceblast;
-            GameModel.iceblasts++;
+            GameModel.gold -= CostBoost;
+            GameModel.countBoosts++;
 
             countGold.text = GameModel.gold.ToString();
-            countIceblasts.text = GameModel.iceblasts.ToString();
+            countBoosts.text = GameModel.countBoosts.ToString();
+        }
+    }
+
+    public void BtnAddRepair()
+    {
+        if (GameModel.gold >= CostRepair)
+        {
+            GameModel.gold -= CostRepair;
+            GameModel.countRepairs++;
+
+            countGold.text = GameModel.gold.ToString();
+            countRepairs.text = GameModel.countRepairs.ToString();
         }
     }
 
@@ -48,22 +60,10 @@ public class ShopPopupView : MonoBehaviour
         if (GameModel.gold >= CostFireball)
         {
             GameModel.gold -= CostFireball;
-            GameModel.fireballs++;
+            GameModel.countFireballs++;
 
             countGold.text = GameModel.gold.ToString();
-            countFireballs.text = GameModel.fireballs.ToString();
-        }
-    }
-
-    public void BtnAddLightning()
-    {
-        if (GameModel.gold >= CostLightning)
-        {
-            GameModel.gold -= CostLightning;
-            GameModel.lightnings++;
-
-            countGold.text = GameModel.gold.ToString();
-            countLightnngs.text = GameModel.lightnings.ToString();
+            countFireballs.text = GameModel.countFireballs.ToString();
         }
     }
 
